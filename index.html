@@ -2044,124 +2044,67 @@ respuestaLegal(texto);
 }
 
 function respuestaLegal(texto){
+    const chat=document.getElementById("legalChat");
+    const estado=document.getElementById("legalState");
 
-const chat=document.getElementById("legalChat");
-const estado=document.getElementById("legalState");
+    let respuesta="No encontré ese trámite.";
+    if(texto.includes("constitución") || texto.includes("constitucion")){
+        respuesta=`
+        Por supuesto.<br><br>
+        Según la Superintendencia los controles de legalidad para <b>Constitución</b> son:
+        <br><br>
+        ✅ Control de homonimia<br>
+        ✅ Objeto social<br>
+        ✅ Capitales<br>
+        ✅ Firma del representante legal
+        `;
+    }
+    else if(texto.includes("nombramiento")){
+        respuesta=`
+        Claro.<br><br>
+        Los controles de legalidad para <b>Nombramiento</b> son:
+        <br><br>
+        ✅ Órgano competente<br>
+        ✅ Cumple quórum<br>
+        ✅ Cumple convocatoria<br>
+        ✅ Cumple SIPREF
+        `;
+    }
 
-let respuesta="No encontré ese trámite.";
+    chat.innerHTML+=`
+    <div class="bot-message">
+        <div class="msg-title">🤖 IA REGISTRAL</div>
+        ${respuesta}
+    </div>
+    `;
 
-if(
-texto.includes("constitución") ||
-texto.includes("constitucion")
-){
+    chat.scrollTop=chat.scrollHeight;
 
-respuesta=`
-Por supuesto.<br><br>
+    speechSynthesis.cancel();
 
-Según la Superintendencia los controles de legalidad para <b>Constitución</b> son:
+    // Limpieza limpia de HTML idéntica a tu segundo proyecto
+    const textoLimpio = respuesta.replace(/<[^>]*>/g," ");
 
-<br><br>
+    // Forzamos el uso estricto de la variable global sin interferencias de scope
+    legalVoice = new SpeechSynthesisUtterance(textoLimpio);
+    legalVoice.lang = "es-CO";
+    legalVoice.rate = 1;
+    legalVoice.pitch = 1;
 
-✅ Control de homonimia
-
-<br>
-
-✅ Objeto social
-
-<br>
-
-✅ Capitales
-
-<br>
-
-✅ Firma del representante legal
-`;
-
+    speechSynthesis.speak(legalVoice);
+    estado.innerHTML="✅ Consulta finalizada";
 }
 
-else if(texto.includes("nombramiento")){
-
-respuesta=`
-Claro.<br><br>
-
-Los controles de legalidad para <b>Nombramiento</b> son:
-
-<br><br>
-
-✅ Órgano competente
-
-<br>
-
-✅ Cumple quórum
-
-<br>
-
-✅ Cumple convocatoria
-
-<br>
-
-✅ Cumple SIPREF
-`;
-
-}
-
-chat.innerHTML+=`
-
-<div class="bot-message">
-
-<div class="msg-title">
-
-🤖 IA REGISTRAL
-
-</div>
-
-${respuesta}
-
-</div>
-
-`;
-
-chat.scrollTop=chat.scrollHeight;
-
-speechSynthesis.cancel();
-
-const textoVoz = respuesta
-.replace(/<[^>]*>/g," ")
-.replace(/[^\p{L}\p{N}\s.,;:¿?¡!]/gu,"");
-
-
-legalVoice=new SpeechSynthesisUtterance(textoVoz);
-
-legalVoice.lang="es-CO";
-
-legalVoice.rate=1;
-
-legalVoice.pitch=1;
-console.log(textoVoz);
-speechSynthesis.speak(legalVoice);
-
-estado.innerHTML="✅ Consulta finalizada";
-
-}
-
-const oldClose = closeSim;
-
-closeSim=function(e){
-
-clearInterval(pbInterval);
-
-oldClose(e);
-
-}
-
-
-
-
-
+// Sobreescritura limpia y segura de la función de cierre sin romper el Scope global
 function closeSim(e){
-    if(e.target.id==="overlay" || e.target.classList.contains("close"))
+    if(e.target.id==="overlay" || e.target.classList.contains("close")){
+        clearInterval(pbInterval); // Apaga el intervalo de Power BI de forma segura
         document.getElementById("overlay").style.display="none";
+    }
 }
+
+
+  
 </script>
 </body>
 </html>
