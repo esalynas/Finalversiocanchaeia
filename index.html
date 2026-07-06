@@ -1897,104 +1897,119 @@ let legalVoice;
 let legalRecognition = null;
 
 function initLegal(){
+    const chat=document.getElementById("legalChat");
+    const estado=document.getElementById("legalState");
+    const mic=document.getElementById("legalMic");
 
-const chat=document.getElementById("legalChat");
-const estado=document.getElementById("legalState");
-const mic=document.getElementById("legalMic");
+    const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 
-const SpeechRecognition=
-window.SpeechRecognition||
-window.webkitSpeechRecognition;
+    if(!SpeechRecognition){
+        estado.innerHTML="❌ Este navegador no soporta reconocimiento de voz.";
+        mic.disabled=true;
+        return;
+    }
 
-if(!SpeechRecognition){
+    if(!legalRecognition){
+        legalRecognition = new SpeechRecognition();
+        legalRecognition.lang="es-CO";
+        legalRecognition.continuous=false;
+        legalRecognition.interimResults=false;
+        legalRecognition.maxAlternatives=1;
+    }
 
-estado.innerHTML="❌ Este navegador no soporta reconocimiento de voz.";
+    mic.onclick=()=>{
+        speechSynthesis.cancel();
 
-mic.disabled=true;
+        // Hack de desbloqueo físico
+        const activador = new SpeechSynthesisUtterance("");
+        speechSynthesis.speak(activador);
 
-return;
+        estado.innerHTML="🎙️ Escuchando...";
+        mic.classList.add("listening");
 
+        try{
+            legalRecognition.start();
+        }catch(e){
+            console.log("Reconocimiento ya activo");
+        }
+    };
+
+    legalRecognition.onresult=(e)=>{
+        const texto=e.results[0][0].transcript.toLowerCase();
+
+        // CORRECCIÓN 1: Insertar el mensaje del usuario con appendChild en lugar de innerHTML +=
+        const userDiv = document.createElement("div");
+        userDiv.className = "user-message";
+        userDiv.innerHTML = `<div class="msg-title">👤 TÚ</div>${texto}`;
+        chat.appendChild(userDiv);
+
+        chat.scrollTop=chat.scrollHeight;
+        escribiendo(texto);
+    };
+
+    legalRecognition.onerror=(e)=>{
+        estado.innerHTML="❌ Error: "+e.error;
+        mic.classList.remove("listening");
+    };
+
+    legalRecognition.onend=()=>{
+        mic.classList.remove("listening");
+        if(estado.innerHTML==="🎙️ Escuchando..."){
+            estado.innerHTML="No escuché ninguna respuesta.";
+        }
+    };
 }
 
-if(!legalRecognition){
+function respuestaLegal(texto){
+    const chat=document.getElementById("legalChat");
+    const estado=document.getElementById("legalState");
 
-legalRecognition = new SpeechRecognition();
+    let respuesta="No encontré ese trámite.";
 
-legalRecognition.lang="es-CO";
-legalRecognition.continuous=false;
-legalRecognition.interimResults=false;
-legalRecognition.maxAlternatives=1;
+    if(texto.includes("constitución") || texto.includes("constitucion")){
+        respuesta=`
+        Por supuesto.<br><br>
+        Según la Superintendencia los controles de legalidad para <b>Constitución</b> son:
+        <br><br>
+        ✅ Control de homonimia<br>
+        ✅ Objeto social<br>
+        ✅ Capitales<br>
+        ✅ Firma del representante legal
+        `;
+    }
+    else if(texto.includes("nombramiento")){
+        respuesta=`
+        Claro.<br><br>
+        Los controles de legalidad para <b>Nombramiento</b> son:
+        <br><br>
+        ✅ Órgano competente<br>
+        ✅ Cumple quórum<br>
+        ✅ Cumple convocatoria<br>
+        ✅ Cumple SIPREF
+        `;
+    }
 
+    // CORRECCIÓN 2: Insertar la respuesta de la IA con appendChild para proteger el hilo de audio
+    const botDiv = document.createElement("div");
+    botDiv.className = "bot-message";
+    botDiv.innerHTML = `<div class="msg-title">🤖 IA REGISTRAL</div>${respuesta}`;
+    chat.appendChild(botDiv);
+
+    chat.scrollTop=chat.scrollHeight;
+
+    speechSynthesis.cancel();
+
+    const textoVoz = respuesta.replace(/<[^>]*>/g," ");
+
+    legalVoice = new SpeechSynthesisUtterance(textoVoz);
+    legalVoice.lang="es-CO";
+    legalVoice.rate=1;
+    legalVoice.pitch=1;
+
+    speechSynthesis.speak(legalVoice);
+    estado.innerHTML="✅ Consulta finalizada";
 }
 
-mic.onclick=()=>{
-
-speechSynthesis.cancel();
-
-estado.innerHTML="🎙️ Escuchando...";
-
-mic.classList.add("listening");
-
-
-try{
-
-legalRecognition.start();
-
-}catch(e){
-
-console.log("Reconocimiento ya activo");
-
-}
-
-};
-
-legalRecognition.onresult=(e)=>{
-
-const texto=e.results[0][0].transcript.toLowerCase();
-
-chat.innerHTML+=`
-
-<div class="user-message">
-
-<div class="msg-title">
-
-👤 TÚ
-
-</div>
-
-${texto}
-
-</div>
-
-`;
-
-chat.scrollTop=chat.scrollHeight;
-
-escribiendo(texto);
-
-};
-
-legalRecognition.onerror=(e)=>{
-
-estado.innerHTML="❌ Error: "+e.error;
-
-mic.classList.remove("listening");
-
-};
-
-legalRecognition.onend=()=>{
-
-mic.classList.remove("listening");
-
-if(estado.innerHTML==="🎙️ Escuchando..."){
-
-estado.innerHTML="No escuché ninguna respuesta.";
-
-}
-
-};
-
-}
 
 function escribiendo(texto){
 
@@ -2043,65 +2058,6 @@ respuestaLegal(texto);
 
 }
 
-function respuestaLegal(texto){
-    const chat=document.getElementById("legalChat");
-    const estado=document.getElementById("legalState");
-
-    let respuesta="No encontré ese trámite.";
-    if(texto.includes("constitución") || texto.includes("constitucion")){
-        respuesta=`
-        Por supuesto.<br><br>
-        Según la Superintendencia los controles de legalidad para <b>Constitución</b> son:
-        <br><br>
-        ✅ Control de homonimia<br>
-        ✅ Objeto social<br>
-        ✅ Capitales<br>
-        ✅ Firma del representante legal
-        `;
-    }
-    else if(texto.includes("nombramiento")){
-        respuesta=`
-        Claro.<br><br>
-        Los controles de legalidad para <b>Nombramiento</b> son:
-        <br><br>
-        ✅ Órgano competente<br>
-        ✅ Cumple quórum<br>
-        ✅ Cumple convocatoria<br>
-        ✅ Cumple SIPREF
-        `;
-    }
-
-    chat.innerHTML+=`
-    <div class="bot-message">
-        <div class="msg-title">🤖 IA REGISTRAL</div>
-        ${respuesta}
-    </div>
-    `;
-
-    chat.scrollTop=chat.scrollHeight;
-
-    speechSynthesis.cancel();
-
-    // Limpieza limpia de HTML idéntica a tu segundo proyecto
-    const textoLimpio = respuesta.replace(/<[^>]*>/g," ");
-
-    // Forzamos el uso estricto de la variable global sin interferencias de scope
-    legalVoice = new SpeechSynthesisUtterance(textoLimpio);
-    legalVoice.lang = "es-CO";
-    legalVoice.rate = 1;
-    legalVoice.pitch = 1;
-
-    speechSynthesis.speak(legalVoice);
-    estado.innerHTML="✅ Consulta finalizada";
-}
-
-// Sobreescritura limpia y segura de la función de cierre sin romper el Scope global
-function closeSim(e){
-    if(e.target.id==="overlay" || e.target.classList.contains("close")){
-        clearInterval(pbInterval); // Apaga el intervalo de Power BI de forma segura
-        document.getElementById("overlay").style.display="none";
-    }
-}
 
 
   
